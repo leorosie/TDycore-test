@@ -1,0 +1,13 @@
+[output_options]
+times = -999.
+variables = Liquid_Pressure
+plot_time_units = y
+plot_dimension = 2D
+plot_title = TDycore Wheeler-Yotov vs. TDycore Multi-Point Flux Approximation
+plot_x_label = Distance X [m]
+plot_y_label = Distance Y [m]
+plot_type = time slice
+print_error = True
+plot_error = True
+
+
