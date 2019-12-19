@@ -1,0 +1,148 @@
+
+import sys
+import os
+import traceback
+
+sys.path.insert(0,'..')
+sys.path.insert(0,'../simulator_module')
+
+import numpy as np
+import math
+
+from qa_common import *
+
+from qa_solution import QASolutionWriter
+from simulator_modules.python import *
+
+filename = __file__
+
+epsilon_value = 1.e-30
+
+def main(options):
+
+    print('Beginning {}.'.format(filename))
+
+    nx = swap{nx,5}
+    ny = swap{ny,5}
+
+    tunit = 'd'
+
+    Lx = 100.
+    Ly = 100.
+
+    dx = Lx/nx
+    dy = Ly/ny
+
+    k = 1.0e-14           # [m2]
+    mu = 1.728e-3         # [Pa-s]
+    por = 0.20
+    kappa = 1.0e-9        # [1/Pa]
+    chi = k/(por*kappa*mu)
+
+    p0 = 1.e6             # [Pa]
+    p_offset = 101325.    # [Pa]
+
+    # always use 3D array
+    t_soln = np.array([0.0,0.01,0.04,0.06,0.10])          # [day]
+    p_soln = np.zeros((t_soln.size,nx,ny,1))              # [Pa]
+    x_soln = np.linspace(0.+(dx/2.),Lx-(dx/2.),nx)   # [m]
+    y_soln = np.linspace(0.+(dy/2.),Ly-(dy/2.),ny)   # [m]
+    z_soln = np.array([0.5])
+    p1x = np.zeros(int(nx))
+    p2y = np.zeros(int(ny))
+
+    solution_filename = get_python_solution_filename(filename)
+    solution = QASolutionWriter(solution_filename,tunit)
+    solution.write_coordinates(x_soln,y_soln,z_soln)
+
+    # for time=0, use the actual initial condition as the analytical
+    # solution, not the analytical solution with t=0:
+    fx = np.zeros(nx)
+    for i in range(nx):
+        x = x_soln[i]
+        if (0. <= x < (Lx/10.)):
+            fx[i] = 0.
+        if ((Lx/10.) <= x < (4.*Lx/10.)):
+            fx[i] = (10./(3.*Lx))*(x) - (1./3.)
+        if ((4.*Lx/10.) <= x < (6.*Lx/10.)):
+            fx[i] = 1.
+        if ((6.*Lx/10.) <= x < (9.*Lx/10.)):
+            fx[i] = 3. - (10./(3.*Lx))*(x)
+        if ((9.*Lx/10.) <= x < Lx):
+            fx[i] = 0.
+    fy = np.zeros(ny)
+    for j in range(ny):
+        y = y_soln[j]
+        if (0. <= y < (Ly/10.)):
+            fy[j] = 0.
+        if ((Ly/10.) <= y < (4.*Ly/10.)):
+            fy[j] = (10./(3.*Ly))*(y) - (1./3.)
+        if ((4.*Ly/10.) <= y < (6.*Ly/10.)):
+            fy[j] = 1.
+        if ((6.*Ly/10.) <= y < (9.*Ly/10.)):
+            fy[j] = 3. - (10./(3.*Ly))*(y)
+        if ((9.*Ly/10.) <= y < Ly):
+            fy[j] = 0.
+    
+    for i in range(nx):
+        for j in range(ny):
+            p_soln[0,i,j,0] = ( p0*fx[i]*fy[j] + p_offset )  # [Pa]
+    
+    solution.write_dataset(0.,p_soln[0,:,:,0],'Liquid_Pressure')
+    
+    # create the analytical solution for all other times > 0
+    for itime in range(1,5):
+        t = t_soln[itime]*24.0*3600.0  # [sec]
+        # create p1y
+        sum_term_y = np.zeros(ny)
+        sum_term_old_y = np.zeros(ny)
+        n = 1
+        epsilon = 1
+        #while n < 5001:
+        while epsilon > epsilon_value:
+            sum_term_old_y = sum_term_y
+            sum_term_y = sum_term_old_y + (np.cos(n*math.pi*y_soln/Ly)* \
+                np.exp(-chi*pow(n,2)*pow(math.pi,2)*t/pow(Ly,2))* \
+                (80./(3.*pow((n*math.pi),2)))*np.cos(n*math.pi/2.)*\
+                np.sin(n*math.pi/4.)*np.sin(3.*n*math.pi/20.))
+            epsilon = np.max(np.abs(sum_term_old_y-sum_term_y))
+            n = n + 1
+        p2y = 0.5 + sum_term_y
+        # create p1x
+        sum_term_x = np.zeros(nx)
+        sum_term_old_x = np.zeros(nx)
+        n = 1
+        epsilon = 1
+        while epsilon > epsilon_value:
+            sum_term_old_x = sum_term_x
+            sum_term_x = sum_term_old_x + (np.sin(n*math.pi*x_soln/Lx)* \
+                np.exp(-chi*pow(n,2)*pow(math.pi,2)*t/pow(Lx,2))* \
+                (80./(3.*pow((n*math.pi),2)))*np.sin(n*math.pi/2.)* \
+                np.sin(n*math.pi/4.)*np.sin(3.*n*math.pi/20.))
+            epsilon = np.max(np.abs(sum_term_old_x-sum_term_x))
+            n = n + 1
+        p1x = sum_term_x
+        for i in range(nx):
+            for j in range(ny):
+                p_soln[itime,i,j,0] = ( p0*p1x[i]*p2y[j] + p_offset ) # [Pa]
+    
+        solution.write_dataset(t_soln[itime],p_soln[itime,:,:,0],
+                               'Liquid_Pressure')
+      
+    solution.destroy()
+    print('Finished with {}.'.format(filename))
+
+if __name__ == "__main__":
+    cmdl_options = []
+    try:
+        suite_status = main(cmdl_options)
+        sys.exit(suite_status)
+    except Exception as error:
+        print(str(error))
+#        if cmdl_options.backtrace:
+#            traceback.print_exc()
+        traceback.print_exc()
+        print("failure")
+        sys.exit(1)
+
+

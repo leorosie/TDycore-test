@@ -1,0 +1,21 @@
+# swap variable = list of swap variables
+[swap_options]
+method = list
+#max_attempts=4
+nx = 20
+ny = 20
+
+[output_options]
+times = 0. d,0.01 d,0.04 d,0.06 d,0.1 d
+variables = Liquid_Pressure
+plot_time_units = d
+plot_dimension = 2D
+plot_title = Kolditz 2.2.10
+plot_x_label = Distance X [m]
+plot_y_label = Distance Y [m]
+#plot_to_screen = True
+plot_error = True
+print_error = True
+error_units = Pa
+
+

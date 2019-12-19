@@ -1,0 +1,18 @@
+[swap_options]
+method = list
+nx = 10,50
+
+[output_options]
+times = 0.05 d, 0.10 d, 0.25 d, 0.50 d
+variables = Liquid_Pressure
+plot_time_units = d
+plot_dimension = 1D
+plot_title = Kolditz 2.2.9
+plot_x_label = Time [days], Distance x [m]
+plot_y_label = Liquid Pressure [Pa], Liquid Pressure [Pa]
+plot_type = observation, time slice
+locations = 15.0 0.5 0.5
+plot_error = True
+print_error = True
+error_units = Pa
+#plot_to_screen = True

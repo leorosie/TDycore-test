@@ -1,0 +1,100 @@
+import sys
+import os
+import traceback
+
+sys.path.insert(0,'..')
+sys.path.insert(0,'../simulator_module')
+
+import numpy as np
+import math
+
+from qa_common import *
+
+from qa_solution import QASolutionWriter
+from simulator_modules.python import *
+
+filename = __file__
+epsilon_value = 1.e-30
+
+def main(options):
+
+    print('Beginning {}.'.format(filename))
+
+    nx = swap{nx,10}
+    tx = 10
+    tunit = 'd' 
+    Lx = 100
+    dx = Lx/nx
+
+    k = 1.0e-14
+    mu = 1.728e-3
+    por = 0.20
+    kappa = 1.0e-9
+    chi = k/(por*kappa*mu)
+    p_offset = .101325
+
+    t_soln = np.linspace(0,0.50,tx)
+    x_soln=np.array([15.0])
+    y_soln = np.array([0.5])
+    z_soln = np.array([0.5])
+    p_soln = np.zeros((t_soln.size))#,tx))
+    
+
+    solution_filename = get_python_solution_filename(filename)
+    solution = QASolutionWriter(solution_filename,tunit)
+    solution.write_time(t_soln)
+
+
+    for time in range(t_soln.size):
+      t = t_soln[time]*24.0*3600.0  # [sec]
+      sum_term_old = 0 # np.zeros(nx)
+      sum_term = 0 #np.zeros(nx)
+      n = 1
+      epsilon = 1.0
+      
+      while epsilon > epsilon_value:
+        sum_term_old = sum_term
+        sum_term = sum_term_old + (np.cos(n*math.pi*x_soln/Lx)*np.exp(-chi*pow(n,2)*pow(math.pi,2)*t/pow(Lx,2))*(80./(3.*pow((n*math.pi),2)))*np.cos(n*math.pi/2.)*np.sin(n*math.pi/4.)*np.sin(3.*n*math.pi/20.))
+        epsilon = np.max(np.abs(sum_term_old-sum_term))
+        n = n + 1
+      p_soln[time] = ((0.50 + sum_term) + p_offset)*1.0e6
+
+    solution.write_dataset(np.concatenate((x_soln,y_soln,z_soln)),p_soln,'Liquid_Pressure','Observation')
+    
+    t_soln = np.array([0.05,0.10,0.25,0.50]) 
+    p_soln = np.zeros((t_soln.size,nx))
+    x_soln = np.linspace(0.+(dx/2.),Lx-(dx/2.),nx)
+    y_soln = np.array([0.5])
+    z_soln = np.array([0.5])
+    
+    solution.write_coordinates(x_soln,y_soln,z_soln)
+
+    for time in range(4):
+      t = t_soln[time]*24.0*3600.0  # [sec]
+      sum_term_old = np.zeros(nx)
+      sum_term = np.zeros(nx)
+      n = 1
+      epsilon = 1.0
+      
+      while epsilon > epsilon_value:
+        sum_term_old = sum_term
+        sum_term = sum_term_old + (np.cos(n*math.pi*x_soln/Lx)*np.exp(-chi*pow(n,2)*pow(math.pi,2)*t/pow(Lx,2))*(80./(3.*pow((n*math.pi),2)))*np.cos(n*math.pi/2.)*np.sin(n*math.pi/4.)*np.sin(3.*n*math.pi/20.))
+        epsilon = np.max(np.abs(sum_term_old-sum_term))
+        n = n + 1
+      p_soln[time,:] = ((0.50 + sum_term) + p_offset)*1.0e6
+
+      solution.write_dataset(t_soln[time],p_soln[time,:],'Liquid_Pressure')
+
+    solution.destroy()
+    print('Finished with {}.'.format(filename))
+
+if __name__ == "__main__":
+   cmdl_options=[]
+   try:
+      suite_status=main(cmdl_options)
+      sys.exit(suite_status)
+   except Exception as error:
+     print(str(error))
+     traceback.print_exc()
+     print("failure")
+     sys.exit(1)
