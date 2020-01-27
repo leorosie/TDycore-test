@@ -1,6 +1,6 @@
 [output_options]
 times = -999.
-variables = Liquid_Pressure
+variables = Liquid Pressure
 plot_time_units = y
 plot_dimension = 2D
 plot_title = TDycore Wheeler-Yotov vs. TDycore Multi-Point Flux Approximation
