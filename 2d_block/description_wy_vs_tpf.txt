@@ -8,5 +8,5 @@ Features:
 
 The 2D problem domain consists of a unit square divided into quadrants with a permeability of 10\ :sup:`-12`\ at the upper left and lower right and 10\ :sup: `-12`\ at the upper right and lower left. Dirichlet boundary conditions are assigned to all four sides of the domain with a linear gradient ranging between 1 MPa at the upper right and 3 MPa at the lower left.
 
-.. figure:: ../../tdycore-test/2d_block/2d_block_graded.jpg
+.. figure:: /app/TDycore-test/2d_block/2d_block_graded.jpg
    :width: 60%
